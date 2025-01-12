@@ -483,15 +483,29 @@ void Game::run()
 	bool gameRunning = false;
 	bool gameValid;
 	int menuOption = 0;
+	FileHandler fileHandler;
 
 	map<int,Level> alllevels;
 	//gameValid=FileHandler::loadAllFiles(alllevels);
+	if (!fileHandler.loadAllFiles(alllevels)) {
+		std::cerr << "Error: No valid level files found!" << std::endl;
+		return;
+	}
+
+	int currLvl = 1; // Start at level 1
+	auto levelIter = alllevels.find(currLvl);
+	if (levelIter == alllevels.end()) {
+		std::cerr << "Error: Level " << currLvl << " not found!" << std::endl;
+		return;
+	}
+
+	Level* currLevel = &levelIter->second; // Get the current level
+	
 
 	
 	while (true) {
 		startMenu();
 		menuOption = _getch() - '0';
-		int currLvl = 1;
 		int lives;
 		switch (menuOption)
 		{
@@ -523,8 +537,7 @@ void Game::run()
 				currLevel->initializeBoard2();
 
 
-			currLevel->printBoard();
-			drawBorders(currLevel->getBoardPos());
+			currLevel->printBoard(); // Draw the board
 			bool finished = false;
 
 			Player mario('@',currLevel->getstartPosMario());
