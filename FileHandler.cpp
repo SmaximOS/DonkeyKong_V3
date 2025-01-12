@@ -57,11 +57,13 @@ bool FileHandler:: lookForLegend(const Point& startpos, const string& str, Point
 		return true;
 	}
 
-	false;
+	return false;
 }
 
 bool FileHandler::readFileContent(const string& fileName, Level& toBuild) {
     std::ifstream myFile(fileName);
+
+    // Check if the file opened successfully
     if (!myFile.is_open()) {
         std::cerr << "Error: Unable to open file: " << fileName << std::endl;
         return false;
@@ -69,23 +71,28 @@ bool FileHandler::readFileContent(const string& fileName, Level& toBuild) {
 
     char c;
     int currentRow = 0, currentCol = 0;
-    char(*board)[GameConfig::WIDTH - 2] = toBuild.getBoardPointer(); 
+    char(*board)[GameConfig::WIDTH - 2] = toBuild.getBoardPointer();
+    if (!board) {
+        std::cerr << "Error: Board pointer is null." << std::endl;
+        myFile.close();  // Ensure we close the file before returning
+        return false;
+    }
 
-    
-    while (!myFile.get(c).eof() && currentRow < GameConfig::HEIGHT) {
+    // Read the file character by character
+    while (myFile.get(c) && currentRow < GameConfig::HEIGHT) {
         if (c == '\n') {
-            // Fill remaining columns in the row with spaces
+            // Fill the remaining columns with spaces if we haven't filled all columns
             while (currentCol < GameConfig::WIDTH - 2) {
                 board[currentRow][currentCol++] = ' ';
             }
-            board[currentRow][currentCol] = '\0'; 
+            board[currentRow][currentCol] = '\0';
             ++currentRow;
             currentCol = 0;
             continue;
         }
 
+       
         if (currentCol < GameConfig::WIDTH - 2) {
-           
             if (c == '@')
                 toBuild.setstartPosMario({ currentCol, currentRow });
             else if (c == '$')
@@ -94,27 +101,29 @@ bool FileHandler::readFileContent(const string& fileName, Level& toBuild) {
                 toBuild.setstartPosDonkeyKong({ currentCol, currentRow });
             else if (c == 'P')
                 toBuild.setPosHammer({ currentCol, currentRow });
+            else if (c == 'H')  
+                toBuild.addLadder(Ladder(Point(currentCol, currentRow)));
+            else if (c == '=')
+                board[currentRow][currentCol] = '=';
+            else if (c == '>')
+                board[currentRow][currentCol] = '>';
+            else if (c == '<')
+                board[currentRow][currentCol] = '<';
 
             board[currentRow][currentCol++] = c;
         }
+        else {
+            std::cerr << "Warning: Exceeding column limit in file " << fileName << std::endl;
+        }
     }
 
-    
-    for (int col = 0; col < GameConfig::WIDTH - 2; ++col) {
-        board[0][col] = 'Q';                              
-        board[currentRow - 1][col] = 'Q';                
-    }
-    board[0][GameConfig::WIDTH - 3] = '\0';
-    board[currentRow - 1][GameConfig::WIDTH - 3] = '\0';
-
-    
-    for (int row = 1; row < currentRow - 1; ++row) {
-        board[row][0] = 'Q';                              
-        board[row][GameConfig::WIDTH - 3] = 'Q';          
-        board[row][GameConfig::WIDTH - 3] = '\0';         
+    if (myFile.is_open()) {
+        myFile.close();
     }
 
-    return true; 
+    return true;
 }
+
+
 
 
